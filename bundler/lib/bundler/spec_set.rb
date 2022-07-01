@@ -11,9 +11,9 @@ module Bundler
       @specs = specs
     end
 
-    def for(dependencies, check = false, platforms = [nil])
+    def for(dependencies, check = false, platforms = [Bundler.local_platform])
       handled = ["bundler"].product(platforms).map {|k| [k, true] }.to_h
-      deps = dependencies.product(platforms).map {|dep, platform| [dep.name, platform && dep.force_ruby_platform ? Gem::Platform::RUBY : platform] }
+      deps = dependencies.product(platforms).map {|dep, platform| [dep.name, dep.force_ruby_platform ? Gem::Platform::RUBY : platform] }
       specs = []
 
       loop do
@@ -174,12 +174,9 @@ module Bundler
 
     def specs_for_dependency(name, platform)
       specs_for_name = lookup[name]
-      if platform.nil?
-        GemHelpers.select_best_platform_match(specs_for_name, Bundler.local_platform)
-      else
-        specs_for_name_and_platform = GemHelpers.select_best_platform_match(specs_for_name, platform)
-        specs_for_name_and_platform.any? ? specs_for_name_and_platform : specs_for_name
-      end
+      specs_for_name_and_platform = GemHelpers.select_best_platform_match(specs_for_name, platform)
+      return specs_for_name_and_platform if platform == Bundler.local_platform
+      specs_for_name_and_platform.any? ? specs_for_name_and_platform : specs_for_name
     end
 
     def tsort_each_child(s)
